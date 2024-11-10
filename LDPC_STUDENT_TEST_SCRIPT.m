@@ -40,7 +40,7 @@ MAX_ITER = 100;
 
 % Loop for the tests
 fprintf('+--------------------------------------------------------------------------------------------------------------------------+\n')
-fprintf('| Tests\t|\tTrue == Flip\t|\tTrue == Hard\tTrue == Hard\t|\tHard == Hard (ref)\tSoft == Soft (ref) |\n')
+fprintf('| Tests\t|\tTrue == Flip\t|\tTrue == Hard\tTrue == Soft\tTrue == Soft(ref)\t|\tHard == Hard (ref)\tSoft == Soft (ref) |\n')
 fprintf('+--------------------------------------------------------------------------------------------------------------------------+\n')
 for n = 1:N_data
     fprintf('| %5d\t|\t', n)
@@ -49,7 +49,7 @@ for n = 1:N_data
     
     % Extract the codewords and probabilities
     c_ds_true = logical(data(:, 1));    % True codeword
-    c_ds_flip = logical(data(:, 2));    % Flipped codeword (some of them may be identical to the true codeword)
+    c_ds_flip = logical(data(:, 2));   % Flipped codeword (some of them may be identical to the true codeword)
     c_ds_hard = logical(data(:, 3));    % Hard decoded codeword (some of them were incorrectly decoded)
     c_ds_soft = logical(data(:, 4));    % Soft decoded codeword (some of them were incorrectly decoded)
     P1_ds = data(:, 5);                 % Probability such that P1(i) == P(c_flip(i) == 1 | y(i))
@@ -66,6 +66,7 @@ for n = 1:N_data
     % If they return 1, the two vectors are equal.
     fprintf('%12s\t', string(isequal(c_ds_true, c_hard)))
     fprintf('%12s\t|\t', string(isequal(c_ds_true, c_soft)))
+    fprintf('%12s\t|\t', string(isequal(c_ds_true, c_ds_soft)))
     
     % Comparison with corrected data form the dataset
     % If they return 1, the two vectors are equal.

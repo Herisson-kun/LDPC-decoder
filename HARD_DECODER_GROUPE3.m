@@ -25,27 +25,29 @@ function c_hard = HARD_DECODER_GROUPE3(c, H, MAX_ITER)
                     temp_sum = mod(temp_sum + c_hard(l), 2);
                 end
                 r_ji(j, i) = temp_sum;  % Message de c_node vers v_node
+                
             end
         end
         
         % Étape 3 : Mise à jour des messages v_nodes -> c_nodes (décision hard)
         for i = 1:N
-            Ci = find(H(:, i) == 1); % Ensemble des c_nodes connectés à v_node c_i
+            % Ensemble des c_nodes connectés au v_node i
+            Ci = find(H(:, i) == 1);
             
-            sum = 0;
-            % Additionner les messages reçus des c_nodes pour chaque v_node
-            for j = Ci
-                sum = sum + r_ji(j, i);
-            end
-            sum = sum/length(Ci);
-            
-            % Prise de décision hard-decision basée sur le signe total
-            if sum > 0.5
-                c_hard(i) = 1;  % Si la moyenne est superieur à 0.5, c_i = 1
+            % Calcul de la somme des messages reçus des c_nodes connectés
+            sum_msg = sum(r_ji(Ci, i));
+
+            % Inclure la valeur reçue initialement dans le vote de majorité
+            majority_vote = sum_msg + c_hard(i); % Ajout de c_hard(i) pour un vote de majorité incluant le bit reçu
+
+            % Décision hard: si la majorité est de 1, alors c_hard(i) = 1; sinon c_hard(i) = 0
+            if majority_vote >= (numel(Ci) + 1) / 2
+                c_hard(i) = 1;
             else
-                c_hard(i) = 0;  % sinon, c_i = 0
+                c_hard(i) = 0;
             end
         end
+
         
         % Vérification des contraintes de parité (fin du décodage si validées)
         if all(mod(H * c_hard, 2) == 0)

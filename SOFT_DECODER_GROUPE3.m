@@ -11,6 +11,7 @@ function c_chapeau = SOFT_DECODER_GROUPE3(c, H, p, MAX_ITER)
     % Initialisation des messages comme matrice de vecteur à deux valeurs q_ij = ( qij(0), qij(1) )
     q_ij = zeros(N, M, 2); % Messages v_node -> c_node
     r_ji = zeros(M, N, 2); % Messages c_node -> v_node
+    Q_i = zeros(N, 2);
 
     % Initialisation des messages avec les probabilités v_node -> c_node
     for i = 1:N
@@ -24,24 +25,23 @@ function c_chapeau = SOFT_DECODER_GROUPE3(c, H, p, MAX_ITER)
 
     % Boucle itérative du décodage
     for iteration = 1:MAX_ITER
-
         % Étape 2 : Mise à jour des messages r_ji des c_node -> v_node
         for j = 1:M
             Vj = find(H(j, :) == 1); % Ensemble des v_nodes c_i connectés à f_j
             for i = Vj
                 % Calcul des messages r_ji(b) pour chaque i dans Vj
-                temp_prod_0 = 1;
+                temp_prod = 1;
                 for l = setdiff(Vj, i)
-                    temp_prod_0 = temp_prod_0 * (1 - 2 * q_ij(l, j, 2));
+                    temp_prod = temp_prod * (1 - 2 * q_ij(l, j, 2));
                 end
-                r_ji(j, l, 1) = 0.5 + 0.5 * temp_prod_0;   % rji(0)
-                r_ji(j, l, 2) = 1 - r_ji(j, l, 1);    % rji(1)
+                r_ji(j, i, 1) = 0.5 + 0.5 * temp_prod;   % rji(0)
+                r_ji(j, i, 2) = 1 - r_ji(j, i, 1) ;   % rji(1)
             end
         end
-
+     
         % Étape 3 : Mise à jour des messages q_ij des v_node -> c_node
         for i = 1:N
-            Ci = find(H(:, i) == 1); % Ensemble des nœuds de parité connectés à c_i
+            Ci = find(H(:, i) == 1)'; % Ensemble des nœuds de parité connectés à c_i
             for j = Ci
                 temp_prod_0 = 1;
                 temp_prod_1 = 1;
@@ -52,30 +52,20 @@ function c_chapeau = SOFT_DECODER_GROUPE3(c, H, p, MAX_ITER)
                 Kij = 1 / ((1 - p(i)) * temp_prod_0 + p(i) * temp_prod_1); % Constante de normalisation
                 q_ij(i, j, 1) = Kij * (1 - p(i)) * temp_prod_0;       % qij(0)
                 q_ij(i, j, 2) = Kij * p(i) * temp_prod_1;             % qij(1)
-            end
-        end
 
-        % Étape 4 : Estimation de chaque bit c_i à partir des messages mis à jour
-        for i = 1:N
-            Ci = find(H(:, i) == 1); % Ensemble des nœuds de parité connectés à c_i
-            temp_prod_0 = 1; 
-            temp_prod_1 = 1;      
-            for j = Ci
-                temp_prod_0 = temp_prod_0 * r_ji(j, i, 1);
-                temp_prod_1 = temp_prod_1 * r_ji(j, i, 2);
+                Q_i(1) = r_ji(j, i, 1)*q_ij(i, j, 1)/Kij;             % Qi(0)
+                Q_i(2) = r_ji(j, i, 2)*q_ij(i, j, 2)/Kij;             % Qi(1)
             end
             % Décision pour c_i dans l'itération
-            if p(i)*temp_prod_1 > (1-p(i))*temp_prod_0
+            if Q_i(2) > Q_i(1)
                 c_chapeau(i) = 1;
             else
                 c_chapeau(i) = 0;
             end
         end
-
         % Vérification des contraintes de parité
         if all(mod(H * c_chapeau, 2) == 0)
             % Si toutes les contraintes sont respectées, fin du décodage
             break;
         end
     end
-end
